@@ -17,7 +17,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-db_drop_and_create_all()
+#db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -28,7 +28,7 @@ db_drop_and_create_all()
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
-@app.route('/drinks')
+@app.route('/drinks', methods=["GET"])
 def get_drinks():
     drinks = Drink.query.all()
     drinks_formatted = [drink.short() for drink in drinks]
@@ -51,19 +51,16 @@ def get_drinks():
 app.route('/drinks-detail')
 @requires_auth('get:drinks-detail')
 def view_drinks_detail(jwt):
-   
-    drinks_detail = Drink.query.all()
-    drinks_detail_formatted =  [drink.long() for drink in drinks_detail]
+    drinks = Drink.query.order_by(id).all()
+    formatted_drinks = [drink.long() for drink in drinks]
     
-   # if len(drinks_detail_formatted) == 0:
-    #    abort(404)
-
     return jsonify({
-        'success':True, 
-        'drinks': drinks_detail_formatted
-    }
-
-    )
+        'success': True,
+        'drinks': formatted_drinks 
+        
+        })
+   
+    
 
 '''
 @TODO implement endpoint ---> done 
@@ -77,21 +74,24 @@ def view_drinks_detail(jwt):
 app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
 def create_drink(jwt):
-    body = request.get_json()
-    title = body.get('title', None)
-    recipe = body.get('recipe', None)
+    body = json.loads(request.data.decode('utf-8'))
 
     try:
-        drink = Drink(title=title, recipe=json.dumps(recipe))
-        drink.insert()
+        drink = Drink(title=body['title'],
+        recipe=json.dumps(body['recipe']))
+
+        drink.insert() 
 
         return jsonify({
-            'success': True,
-            'drinks': drink.long(),
+             'success': True,
+            'drinks': drink.long()
         })
     except Exception:
         abort(422)
 
+
+    
+   
 
 
 '''
